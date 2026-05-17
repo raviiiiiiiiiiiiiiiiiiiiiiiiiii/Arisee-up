@@ -22,8 +22,10 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.ariseup.app"
     },
-    "plugins": [
-      "expo-router"
-    ]
+    "extra": {
+      "eas": {
+        "projectId": "55c942ba-89a2-4bdf-aba0-e2385deb407c"
+      }
+    }
   }
 }
