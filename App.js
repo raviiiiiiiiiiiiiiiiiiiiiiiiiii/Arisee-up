@@ -3,9 +3,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFonts, CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import OnboardingScreen from './screens/OnboardingScreen';
 import AuthScreen from './screens/AuthScreen';
@@ -16,15 +16,7 @@ import SettingsScreen from './screens/SettingsScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const TAB_ICONS = {
-  Home: { active: '🏠', inactive: '🏠' },
-  Progress: { active: '📈', inactive: '📈' },
-  Settings: { active: '⚙️', inactive: '⚙️' },
-};
-
 function MainTabs() {
-  const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -39,15 +31,18 @@ function MainTabs() {
         },
         tabBarActiveTintColor: '#A78BFF',
         tabBarInactiveTintColor: '#444466',
-        tabBarLabelStyle: {
-          fontSize: 10,
-          letterSpacing: 0.5,
+        tabBarLabelStyle: { fontSize: 11 },
+        tabBarIcon: ({ focused, color, size }) => {
+          if (route.name === 'Home') {
+            return <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />;
+          }
+          if (route.name === 'Progress') {
+            return <Ionicons name={focused ? 'trending-up' : 'trending-up-outline'} size={24} color={color} />;
+          }
+          if (route.name === 'Settings') {
+            return <Ionicons name={focused ? 'settings' : 'settings-outline'} size={24} color={color} />;
+          }
         },
-        tabBarIcon: ({ focused }) => (
-          <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.4 }}>
-            {TAB_ICONS[route.name]?.active}
-          </Text>
-        ),
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
