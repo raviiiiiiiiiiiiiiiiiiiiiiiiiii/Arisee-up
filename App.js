@@ -10,49 +10,49 @@ import { useFonts, CinzelDecorative_400Regular, CinzelDecorative_700Bold } from 
 import OnboardingScreen from './screens/OnboardingScreen';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
-import LevelScreen from './screens/LevelScreen';
-import AccountScreen from './screens/AccountScreen';
+import ProgressScreen from './screens/ProgressScreen';
+import SettingsScreen from './screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function TabIcon({ name, focused }) {
-  const icons = { Home: '⚔️', Level: '⭐', Account: '👤' };
-  return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.35 }}>{icons[name]}</Text>
-  );
-}
+const TAB_ICONS = {
+  Home: { active: '🏠', inactive: '🏠' },
+  Progress: { active: '📈', inactive: '📈' },
+  Settings: { active: '⚙️', inactive: '⚙️' },
+};
 
 function MainTabs() {
   const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
+
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: '#07090F',
-          borderTopColor: '#1A1F35',
+          backgroundColor: '#0F0F1C',
+          borderTopColor: '#1E1E30',
           borderTopWidth: 1,
           height: 75,
           paddingBottom: 12,
           paddingTop: 8,
         },
         tabBarActiveTintColor: '#A78BFF',
-        tabBarInactiveTintColor: '#3D4060',
+        tabBarInactiveTintColor: '#444466',
         tabBarLabelStyle: {
-          fontSize: 9,
-          letterSpacing: 2,
-          textTransform: 'uppercase',
-          fontFamily: fontsLoaded ? 'CinzelDecorative_400Regular' : 'System',
+          fontSize: 10,
+          letterSpacing: 0.5,
         },
-      }}
+        tabBarIcon: ({ focused }) => (
+          <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.4 }}>
+            {TAB_ICONS[route.name]?.active}
+          </Text>
+        ),
+      })}
     >
-      <Tab.Screen name="Home" component={HomeScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon name="Home" focused={focused} /> }} />
-      <Tab.Screen name="Level" component={LevelScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon name="Level" focused={focused} /> }} />
-      <Tab.Screen name="Account" component={AccountScreen}
-        options={{ tabBarIcon: ({ focused }) => <TabIcon name="Account" focused={focused} /> }} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Progress" component={ProgressScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
@@ -76,7 +76,7 @@ export default function App() {
 
   if (!initialRoute) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#07090F', justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ flex: 1, backgroundColor: '#0A0A12', justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator color="#A78BFF" size="large" />
       </View>
     );
