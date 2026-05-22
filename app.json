@@ -4,18 +4,36 @@
     "slug": "arise-up",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#060A12"
+      "backgroundColor": "#0A0A12"
     },
     "android": {
-      "package": "com.ariseup.app"
+      "package": "com.ariseup.app",
+      "permissions": [
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "SCHEDULE_EXACT_ALARM"
+      ]
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.ariseup.app"
+      "bundleIdentifier": "com.ariseup.app",
+      "infoPlist": {
+        "UIBackgroundModes": ["fetch", "remote-notification"]
+      }
     },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#7B4FFF",
+          "sounds": []
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "55c942ba-89a2-4bdf-aba0-e2385deb407c"
