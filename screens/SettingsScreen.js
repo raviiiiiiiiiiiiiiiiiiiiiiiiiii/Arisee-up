@@ -4,46 +4,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFonts, CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative';
 import { useFocusEffect } from '@react-navigation/native';
+import { useAppContext } from '../context/AppContext';
 
 export default function SettingsScreen({ navigation }) {
-  const [notifications, setNotifications] = useState(true);
-  const [soundEffects, setSoundEffects] = useState(true);
-  const [vibration, setVibration] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const {
+    darkMode, theme,
+    soundEnabled, vibrationEnabled, notificationsEnabled,
+    toggleDarkMode, toggleSound, toggleVibration, toggleNotifications,
+    triggerHaptic, playSound,
+  } = useAppContext();
+
   const [userData, setUserData] = useState({ username: 'Hunter', email: '' });
 
   const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
   const cinzelBold = fontsLoaded ? 'CinzelDecorative_700Bold' : 'System';
+  const cinzel = fontsLoaded ? 'CinzelDecorative_400Regular' : 'System';
+
+  const t = theme;
 
   useFocusEffect(useCallback(() => {
     (async () => {
       const user = await AsyncStorage.getItem('user_data');
       if (user) setUserData(JSON.parse(user));
-      // Load saved settings
-      const settings = await AsyncStorage.getItem('app_settings');
-      if (settings) {
-        const s = JSON.parse(settings);
-        setNotifications(s.notifications ?? true);
-        setSoundEffects(s.soundEffects ?? true);
-        setVibration(s.vibration ?? false);
-        setDarkMode(s.darkMode ?? true);
-      }
     })();
   }, []));
 
-  const saveSetting = async (key, value) => {
-    const settings = await AsyncStorage.getItem('app_settings');
-    const s = settings ? JSON.parse(settings) : {};
-    s[key] = value;
-    await AsyncStorage.setItem('app_settings', JSON.stringify(s));
-  };
-
-  const handleToggle = (key, setter) => async (val) => {
-    setter(val);
-    await saveSetting(key, val);
-  };
-
   const handleLogout = () => {
+    triggerHaptic('medium');
     Alert.alert('Log Out', 'Are you sure you want to leave the guild?', [
       { text: 'Stay', style: 'cancel' },
       {
@@ -56,85 +43,100 @@ export default function SettingsScreen({ navigation }) {
     ]);
   };
 
+  const handleToggle = (toggleFn, label) => async (val) => {
+    await toggleFn(val);
+    playSound('tap');
+  };
+
   const TOGGLES = [
     {
       label: 'Notifications',
-      icon: <Ionicons name="notifications-outline" size={20} color="#A78BFF" />,
-      value: notifications,
-      onToggle: handleToggle('notifications', setNotifications),
+      sub: 'Daily quest reminders',
+      icon: <Ionicons name="notifications-outline" size={20} color={t.accentLight} />,
+      value: notificationsEnabled,
+      onToggle: handleToggle(toggleNotifications, 'notifications'),
     },
     {
       label: 'Sound Effects',
-      icon: <Ionicons name="volume-medium-outline" size={20} color="#A78BFF" />,
-      value: soundEffects,
-      onToggle: handleToggle('soundEffects', setSoundEffects),
+      sub: 'In-app sounds',
+      icon: <Ionicons name="volume-medium-outline" size={20} color={t.accentLight} />,
+      value: soundEnabled,
+      onToggle: (val) => toggleSound(val),
     },
     {
       label: 'Vibration',
-      icon: <MaterialIcons name="vibration" size={20} color="#A78BFF" />,
-      value: vibration,
-      onToggle: handleToggle('vibration', setVibration),
+      sub: 'Haptic feedback',
+      icon: <MaterialIcons name="vibration" size={20} color={t.accentLight} />,
+      value: vibrationEnabled,
+      onToggle: handleToggle(toggleVibration, 'vibration'),
     },
     {
       label: 'Dark Mode',
-      icon: <Ionicons name="moon-outline" size={20} color="#A78BFF" />,
+      sub: darkMode ? 'Currently dark' : 'Currently light',
+      icon: <Ionicons name={darkMode ? 'moon' : 'sunny'} size={20} color={t.accentLight} />,
       value: darkMode,
-      onToggle: handleToggle('darkMode', setDarkMode),
+      onToggle: handleToggle(toggleDarkMode, 'darkMode'),
     },
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: t.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
         {/* Header */}
         <View style={styles.header}>
-          <Text style={[styles.appName, { fontFamily: cinzelBold }]}>ARISE</Text>
-          <Text style={styles.pageTitle}>Settings</Text>
+          <Text style={[styles.appName, { fontFamily: cinzelBold, color: t.accentLight }]}>ARISE</Text>
+          <Text style={[styles.pageTitle, { color: t.text }]}>Settings</Text>
         </View>
 
         {/* Toggles */}
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
           {TOGGLES.map((item, i) => (
             <View key={item.label}
-              style={[styles.row, i < TOGGLES.length - 1 && styles.rowBorder]}>
-              <View style={styles.iconWrap}>{item.icon}</View>
-              <Text style={styles.rowLabel}>{item.label}</Text>
+              style={[styles.row, i < TOGGLES.length - 1 && [styles.rowBorder, { borderBottomColor: t.cardBorder }]]}>
+              <View style={[styles.iconWrap, { backgroundColor: darkMode ? '#1E1E35' : '#EEEEFF' }]}>
+                {item.icon}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.rowLabel, { color: t.text }]}>{item.label}</Text>
+                {item.sub && <Text style={[styles.rowSub, { color: t.textMuted }]}>{item.sub}</Text>}
+              </View>
               <Switch
                 value={item.value}
                 onValueChange={item.onToggle}
-                trackColor={{ false: '#1E1E30', true: '#7B4FFF' }}
+                trackColor={{ false: t.cardBorder, true: t.accent }}
                 thumbColor="#FFFFFF"
-                ios_backgroundColor="#1E1E30"
+                ios_backgroundColor={t.cardBorder}
               />
             </View>
           ))}
         </View>
 
         {/* Account + Logout */}
-        <View style={styles.card}>
-          <TouchableOpacity style={[styles.row, styles.rowBorder]}>
-            <View style={styles.iconWrap}>
-              <Ionicons name="person-outline" size={20} color="#A78BFF" />
+        <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
+          <TouchableOpacity style={[styles.row, styles.rowBorder, { borderBottomColor: t.cardBorder }]}
+            onPress={() => triggerHaptic('light')}>
+            <View style={[styles.iconWrap, { backgroundColor: darkMode ? '#1E1E35' : '#EEEEFF' }]}>
+              <Ionicons name="person-outline" size={20} color={t.accentLight} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.rowLabel}>Account</Text>
-              <Text style={styles.rowSub}>{userData.username}</Text>
+              <Text style={[styles.rowLabel, { color: t.text }]}>Account</Text>
+              <Text style={[styles.rowSub, { color: t.textMuted }]}>{userData.username}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#555577" />
+            <Ionicons name="chevron-forward" size={18} color={t.textMuted} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.row} onPress={handleLogout}>
-            <View style={[styles.iconWrap, styles.logoutIconWrap]}>
+            <View style={[styles.iconWrap, { backgroundColor: '#FF404018' }]}>
               <MaterialIcons name="logout" size={20} color="#FF4040" />
             </View>
-            <Text style={styles.logoutLabel}>Logout</Text>
-            <Ionicons name="chevron-forward" size={18} color="#555577" />
+            <Text style={[styles.rowLabel, { color: '#FF4040', flex: 1 }]}>Logout</Text>
+            <Ionicons name="chevron-forward" size={18} color={t.textMuted} />
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.version, { fontFamily: fontsLoaded ? 'CinzelDecorative_400Regular' : 'System' }]}>
-          ARISE v1.0.0
+        <Text style={[styles.version, { fontFamily: cinzel, color: t.textMuted }]}>
+          ARISE v1.0.0 — SOLO LEVELING
         </Text>
 
         <View style={{ height: 40 }} />
@@ -144,26 +146,16 @@ export default function SettingsScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0A0A12' },
+  container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 20 },
   header: { alignItems: 'center', marginBottom: 32 },
-  appName: { fontSize: 14, color: '#A78BFF', letterSpacing: 6, marginBottom: 8 },
-  pageTitle: { fontSize: 34, color: '#FFFFFF', fontWeight: '300' },
-  card: {
-    backgroundColor: '#12121E', borderRadius: 16,
-    borderWidth: 1, borderColor: '#1E1E30',
-    marginBottom: 16, overflow: 'hidden',
-  },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 15 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: '#1E1E30' },
-  iconWrap: {
-    width: 36, height: 36, borderRadius: 10,
-    backgroundColor: '#1E1E35',
-    justifyContent: 'center', alignItems: 'center', marginRight: 14,
-  },
-  logoutIconWrap: { backgroundColor: '#FF404018' },
-  rowLabel: { flex: 1, color: '#FFFFFF', fontSize: 15 },
-  rowSub: { color: '#555577', fontSize: 12, marginTop: 2 },
-  logoutLabel: { flex: 1, color: '#FF4040', fontSize: 15 },
-  version: { color: '#2A2A3A', fontSize: 9, textAlign: 'center', letterSpacing: 2 },
+  appName: { fontSize: 14, letterSpacing: 6, marginBottom: 8 },
+  pageTitle: { fontSize: 34, fontWeight: '300' },
+  card: { borderRadius: 16, borderWidth: 1, marginBottom: 16, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
+  rowBorder: { borderBottomWidth: 1 },
+  iconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  rowLabel: { fontSize: 15 },
+  rowSub: { fontSize: 11, marginTop: 2 },
+  version: { fontSize: 9, textAlign: 'center', letterSpacing: 2, opacity: 0.5 },
 });
