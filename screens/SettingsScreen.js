@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useFonts, CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
@@ -9,9 +9,8 @@ import { useAppContext } from '../context/AppContext';
 export default function SettingsScreen({ navigation }) {
   const {
     darkMode, theme,
-    soundEnabled, vibrationEnabled, notificationsEnabled,
-    toggleDarkMode, toggleSound, toggleVibration, toggleNotifications,
-    triggerHaptic, playSound,
+    notificationsEnabled,
+    toggleDarkMode, toggleNotifications,
   } = useAppContext();
 
   const [userData, setUserData] = useState({ username: 'Hunter', email: '' });
@@ -29,13 +28,11 @@ export default function SettingsScreen({ navigation }) {
   }, []));
 
   const handleLogout = () => {
-    triggerHaptic('medium');
     Alert.alert('Log Out', 'Are you sure you want to leave the guild?', [
       { text: 'Stay', style: 'cancel' },
       {
         text: 'Log Out', style: 'destructive',
         onPress: async () => {
-          // Clear all user-specific data on logout
           await AsyncStorage.multiRemove([
             'user_loggedin',
             'user_data',
@@ -56,28 +53,14 @@ export default function SettingsScreen({ navigation }) {
       sub: 'Daily quest reminders',
       icon: <Ionicons name="notifications-outline" size={20} color={t.accentLight} />,
       value: notificationsEnabled,
-      onToggle: async (val) => { playSound('tap'); await toggleNotifications(val); },
-    },
-    {
-      label: 'Sound Effects',
-      sub: 'In-app sounds',
-      icon: <Ionicons name="volume-medium-outline" size={20} color={t.accentLight} />,
-      value: soundEnabled,
-      onToggle: async (val) => { await toggleSound(val); },
-    },
-    {
-      label: 'Vibration',
-      sub: 'Haptic feedback',
-      icon: <MaterialIcons name="vibration" size={20} color={t.accentLight} />,
-      value: vibrationEnabled,
-      onToggle: async (val) => { playSound('tap'); await toggleVibration(val); },
+      onToggle: async (val) => { await toggleNotifications(val); },
     },
     {
       label: 'Dark Mode',
       sub: darkMode ? 'Currently dark' : 'Currently light',
       icon: <Ionicons name={darkMode ? 'moon' : 'sunny-outline'} size={20} color={t.accentLight} />,
       value: darkMode,
-      onToggle: async (val) => { playSound('tap'); await toggleDarkMode(val); },
+      onToggle: async (val) => { await toggleDarkMode(val); },
     },
   ];
 
