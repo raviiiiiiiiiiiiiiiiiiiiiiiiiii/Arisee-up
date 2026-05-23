@@ -291,8 +291,6 @@ export default function HomeScreen() {
 
   const toggleTask = async (task) => {
     if (task.done) return;
-    triggerHaptic('medium');
-    playSound('tap');
     const updated = tasks.map(t2 => t2.id === task.id ? { ...t2, done: true } : t2);
     await saveTasks(updated);
     setQuestModal({ visible: true, task });
@@ -300,24 +298,44 @@ export default function HomeScreen() {
     const user = await AsyncStorage.getItem('user_data');
     const u = user ? JSON.parse(user) : { level: 1, xp: 0, totalXP: 0 };
     const prevLevel = u.level || 1;
+    // totalXP is cumulative lifetime XP — never reset
     u.totalXP = (u.totalXP || 0) + task.xp;
-    u.xp = (u.xp || 0) + task.xp;
+    // level is derived from totalXP — 1 level per 500 XP
+    u.level = Math.floor(u.totalXP / 500) + 1;
+
+    // Track daily XP history for chart
+    const today = new Date().toISOString().split('T')[0];
+    const historyRaw = await AsyncStorage.getItem('xp_daily_history');
+    const historyDates = await AsyncStorage.getItem('xp_daily_dates');
+    let history = historyRaw ? JSON.parse(historyRaw) : [];
+    let dates = historyDates ? JSON.parse(historyDates) : [];
+    const todayIdx = dates.indexOf(today);
+    if (todayIdx >= 0) {
+      history[todayIdx] = (history[todayIdx] || 0) + task.xp;
+    } else {
+      dates.push(today);
+      history.push(task.xp);
+      // Keep only last 7 days
+      if (history.length > 7) { history = history.slice(-7); dates = dates.slice(-7); }
+    }
+    await AsyncStorage.setItem('xp_daily_history', JSON.stringify(history));
+    await AsyncStorage.setItem('xp_daily_dates', JSON.stringify(dates));
 
     const allCompleted = updated.every(t2 => t2.done);
     if (allCompleted) {
-      const newLevel = prevLevel + 1;
-      u.level = newLevel; u.xp = 0; u.streak = (u.streak || 0) + 1;
+      u.streak = (u.streak || 0) + 1;
       await AsyncStorage.setItem('user_data', JSON.stringify(u));
-      setUserData(u); setAllDone(true);
+      setUserData(u);
+      setAllDone(true);
       setCurrentQuote(SL_QUOTES[Math.floor(Math.random() * SL_QUOTES.length)]);
-      setTimeout(() => {
-        setQuestModal({ visible: false, task: null });
-        triggerHaptic('success');
-        playSound('complete');
-        setLevelUpModal({ visible: true, from: prevLevel, to: newLevel });
-      }, 1800);
+      // Only show level up modal if user actually leveled up
+      if (u.level > prevLevel) {
+        setTimeout(() => {
+          setQuestModal({ visible: false, task: null });
+          setLevelUpModal({ visible: true, from: prevLevel, to: u.level });
+        }, 1800);
+      }
     } else {
-      u.level = Math.max(prevLevel, Math.floor(u.totalXP / 500) + 1);
       await AsyncStorage.setItem('user_data', JSON.stringify(u));
       setUserData(u);
     }
@@ -325,11 +343,19 @@ export default function HomeScreen() {
 
   const addTask = async () => {
     if (!newTask.trim()) return;
-    triggerHaptic('light');
-    playSound('tap');
-    const task = { id: Date.now().toString(), title: newTask.trim(), xp: parseInt(newXP) || 10, done: false, iconKey: selectedIconKey };
+    const task = {
+      id: Date.now().toString(),
+      title: newTask.trim(),
+      xp: parseInt(newXP) || 10,
+      done: false,
+      iconKey: selectedIconKey,
+    };
     const updated = [...tasks, task];
-    await saveTasks(updated);
+    // Immediately update state — this triggers re-render instantly
+    setTasks(updated);
+    // If all-done screen was showing, adding a new undone task should hide it
+    setAllDone(false);
+    await AsyncStorage.setItem('tasks', JSON.stringify(updated));
     setNewTask(''); setNewXP('10'); setSelectedIconKey('sword');
     setModalVisible(false);
   };
