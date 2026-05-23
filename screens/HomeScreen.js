@@ -165,7 +165,7 @@ function LevelUpModal({ visible, fromLevel, toLevel, onContinue }) {
   );
 }
 
-function AllDoneView({ quote, cinzel, cinzelBold, theme }) {
+function AllDoneView({ quote, cinzel, cinzelBold, theme, onAddTask }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const t = theme;
@@ -188,6 +188,13 @@ function AllDoneView({ quote, cinzel, cinzelBold, theme }) {
         <Text style={[styles.allDoneAuthor, { color: t.accentLight }]}>— {quote.author}</Text>
       </View>
       <Text style={[styles.allDoneNextDay, { color: t.textMuted }]}>New quests unlock tomorrow. Rest, warrior.</Text>
+      <TouchableOpacity
+        style={[styles.newQuestBtn, { borderColor: t.accent, backgroundColor: t.card, marginTop: 20, width: '100%' }]}
+        onPress={onAddTask}
+      >
+        <Ionicons name="add" size={20} color={t.text} style={{ marginRight: 8 }} />
+        <Text style={[styles.newQuestText, { fontFamily: cinzel, color: t.text }]}>Add More Quests</Text>
+      </TouchableOpacity>
     </Animated.View>
   );
 }
@@ -347,7 +354,8 @@ export default function HomeScreen() {
         </View>
 
         {allDone ? (
-          <AllDoneView quote={currentQuote} cinzel={cinzel} cinzelBold={cinzelBold} theme={t} />
+          <AllDoneView quote={currentQuote} cinzel={cinzel} cinzelBold={cinzelBold} theme={t}
+            onAddTask={() => { triggerHaptic('light'); setModalVisible(true); }} />
         ) : (
           <>
             <Text style={[styles.sectionTitle, { fontFamily: cinzelBold, color: t.text }]}>Today's Quests</Text>
