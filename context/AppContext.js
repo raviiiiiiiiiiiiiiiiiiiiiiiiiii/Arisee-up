@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
-import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
 
 const AppContext = createContext({});
 export const useAppContext = () => useContext(AppContext);
@@ -34,11 +32,6 @@ export function AppProvider({ children }) {
   useEffect(() => {
     loadSettings();
     requestAndSetupNotifications();
-    // Pre-load audio mode on mount
-    Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-    }).catch(() => {});
   }, []);
 
   const loadSettings = async () => {
@@ -63,48 +56,9 @@ export function AppProvider({ children }) {
     } catch {}
   };
 
-  // ── Haptics ── direct import, no dynamic
-  const triggerHaptic = async (type = 'light') => {
-    if (!vibrationEnabled) return;
-    try {
-      switch (type) {
-        case 'light':
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          break;
-        case 'medium':
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          break;
-        case 'heavy':
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-          break;
-        case 'success':
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          break;
-        case 'error':
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          break;
-      }
-    } catch (e) {}
-  };
-
-  // ── Sound ── direct import, simple beep tones
-  const playSound = async (type = 'tap') => {
-    if (!soundEnabled) return;
-    try {
-      const uri = type === 'complete'
-        ? 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'
-        : 'https://www.soundjay.com/buttons/sounds/button-09.mp3';
-      const { sound } = await Audio.Sound.createAsync(
-        { uri },
-        { shouldPlay: true, volume: 0.6, isMuted: false }
-      );
-      sound.setOnPlaybackStatusUpdate(status => {
-        if (status.didJustFinish) {
-          sound.unloadAsync().catch(() => {});
-        }
-      });
-    } catch (e) {}
-  };
+  // Removed haptics and sound — stubs kept so screens don't break
+  const triggerHaptic = async () => {};
+  const playSound = async () => {};
 
   const requestAndSetupNotifications = async () => {
     try {
@@ -145,30 +99,12 @@ export function AppProvider({ children }) {
     try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch {}
   };
 
-  const toggleDarkMode = async (val) => {
-    setDarkMode(val);
-    await saveSettings('darkMode', val);
-    triggerHaptic('light');
-  };
-  const toggleSound = async (val) => {
-    setSoundEnabled(val);
-    await saveSettings('soundEffects', val);
-    if (val) {
-      // Test sound when enabling
-      setTimeout(() => playSound('tap'), 100);
-    }
-  };
-  const toggleVibration = async (val) => {
-    setVibrationEnabled(val);
-    await saveSettings('vibration', val);
-    if (val) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    }
-  };
+  const toggleDarkMode = async (val) => { setDarkMode(val); await saveSettings('darkMode', val); };
+  const toggleSound = async (val) => { setSoundEnabled(val); await saveSettings('soundEffects', val); };
+  const toggleVibration = async (val) => { setVibrationEnabled(val); await saveSettings('vibration', val); };
   const toggleNotifications = async (val) => {
     setNotificationsEnabled(val);
     await saveSettings('notifications', val);
-    triggerHaptic('light');
     if (val) await requestAndSetupNotifications();
     else await cancelNotifications();
   };
