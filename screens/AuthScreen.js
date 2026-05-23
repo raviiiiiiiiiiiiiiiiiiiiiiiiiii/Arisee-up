@@ -46,7 +46,11 @@ export default function AuthScreen({ navigation }) {
         if (user.email !== email || user.password !== password) {
           Alert.alert('SYSTEM', 'Wrong credentials, hunter.'); setLoading(false); return;
         }
+        // Clear task data from any previous session
+        await AsyncStorage.multiRemove(['tasks', 'last_task_day']);
       } else {
+        // Clear any old data before registering new account
+        await AsyncStorage.multiRemove(['tasks', 'last_task_day']);
         const userData = { email, password, username: username || 'Hunter', level: 1, xp: 0, totalXP: 0, streak: 0 };
         await AsyncStorage.setItem('user_data', JSON.stringify(userData));
       }
@@ -60,7 +64,14 @@ export default function AuthScreen({ navigation }) {
   const handleGuest = async () => {
     triggerHaptic('light');
     playSound('tap');
-    const guestData = { username: 'Guest Hunter', email: 'guest@arise.app', level: 1, xp: 0, totalXP: 0, streak: 0, isGuest: true };
+    // Always fresh data for guest — clear any previous session
+    await AsyncStorage.multiRemove(['user_data', 'tasks', 'last_task_day']);
+    const guestData = {
+      username: 'Guest Hunter',
+      email: 'guest@arise.app',
+      level: 1, xp: 0, totalXP: 0, streak: 0,
+      isGuest: true,
+    };
     await AsyncStorage.setItem('user_data', JSON.stringify(guestData));
     await AsyncStorage.setItem('user_loggedin', 'true');
     navigation.replace('Main');
