@@ -19,7 +19,6 @@ export default function SettingsScreen({ navigation }) {
   const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
   const cinzelBold = fontsLoaded ? 'CinzelDecorative_700Bold' : 'System';
   const cinzel = fontsLoaded ? 'CinzelDecorative_400Regular' : 'System';
-
   const t = theme;
 
   useFocusEffect(useCallback(() => {
@@ -36,16 +35,17 @@ export default function SettingsScreen({ navigation }) {
       {
         text: 'Log Out', style: 'destructive',
         onPress: async () => {
-          await AsyncStorage.removeItem('user_loggedin');
+          // Clear all user-specific data on logout
+          await AsyncStorage.multiRemove([
+            'user_loggedin',
+            'user_data',
+            'tasks',
+            'last_task_day',
+          ]);
           navigation.replace('Auth');
         },
       },
     ]);
-  };
-
-  const handleToggle = (toggleFn, label) => async (val) => {
-    await toggleFn(val);
-    playSound('tap');
   };
 
   const TOGGLES = [
@@ -54,47 +54,44 @@ export default function SettingsScreen({ navigation }) {
       sub: 'Daily quest reminders',
       icon: <Ionicons name="notifications-outline" size={20} color={t.accentLight} />,
       value: notificationsEnabled,
-      onToggle: handleToggle(toggleNotifications, 'notifications'),
+      onToggle: async (val) => { playSound('tap'); await toggleNotifications(val); },
     },
     {
       label: 'Sound Effects',
       sub: 'In-app sounds',
       icon: <Ionicons name="volume-medium-outline" size={20} color={t.accentLight} />,
       value: soundEnabled,
-      onToggle: (val) => toggleSound(val),
+      onToggle: async (val) => { await toggleSound(val); },
     },
     {
       label: 'Vibration',
       sub: 'Haptic feedback',
       icon: <MaterialIcons name="vibration" size={20} color={t.accentLight} />,
       value: vibrationEnabled,
-      onToggle: handleToggle(toggleVibration, 'vibration'),
+      onToggle: async (val) => { playSound('tap'); await toggleVibration(val); },
     },
     {
       label: 'Dark Mode',
       sub: darkMode ? 'Currently dark' : 'Currently light',
-      icon: <Ionicons name={darkMode ? 'moon' : 'sunny'} size={20} color={t.accentLight} />,
+      icon: <Ionicons name={darkMode ? 'moon' : 'sunny-outline'} size={20} color={t.accentLight} />,
       value: darkMode,
-      onToggle: handleToggle(toggleDarkMode, 'darkMode'),
+      onToggle: async (val) => { playSound('tap'); await toggleDarkMode(val); },
     },
   ];
 
   return (
     <View style={[styles.container, { backgroundColor: t.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-
-        {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.appName, { fontFamily: cinzelBold, color: t.accentLight }]}>ARISE</Text>
           <Text style={[styles.pageTitle, { color: t.text }]}>Settings</Text>
         </View>
 
-        {/* Toggles */}
         <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
           {TOGGLES.map((item, i) => (
             <View key={item.label}
               style={[styles.row, i < TOGGLES.length - 1 && [styles.rowBorder, { borderBottomColor: t.cardBorder }]]}>
-              <View style={[styles.iconWrap, { backgroundColor: darkMode ? '#1E1E35' : '#EEEEFF' }]}>
+              <View style={[styles.iconWrap, { backgroundColor: t.dark ? '#1E1E35' : '#EEEEFF' }]}>
                 {item.icon}
               </View>
               <View style={{ flex: 1 }}>
@@ -112,11 +109,12 @@ export default function SettingsScreen({ navigation }) {
           ))}
         </View>
 
-        {/* Account + Logout */}
         <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
-          <TouchableOpacity style={[styles.row, styles.rowBorder, { borderBottomColor: t.cardBorder }]}
-            onPress={() => triggerHaptic('light')}>
-            <View style={[styles.iconWrap, { backgroundColor: darkMode ? '#1E1E35' : '#EEEEFF' }]}>
+          <TouchableOpacity
+            style={[styles.row, styles.rowBorder, { borderBottomColor: t.cardBorder }]}
+            onPress={() => triggerHaptic('light')}
+          >
+            <View style={[styles.iconWrap, { backgroundColor: t.dark ? '#1E1E35' : '#EEEEFF' }]}>
               <Ionicons name="person-outline" size={20} color={t.accentLight} />
             </View>
             <View style={{ flex: 1 }}>
@@ -138,7 +136,6 @@ export default function SettingsScreen({ navigation }) {
         <Text style={[styles.version, { fontFamily: cinzel, color: t.textMuted }]}>
           ARISE v1.0.0 — SOLO LEVELING
         </Text>
-
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
