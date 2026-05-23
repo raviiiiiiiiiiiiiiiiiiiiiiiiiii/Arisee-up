@@ -24,6 +24,8 @@ export default function AuthScreen({ navigation }) {
   const cinzelBold = fontsLoaded ? 'CinzelDecorative_700Bold' : 'System';
   const cinzel = fontsLoaded ? 'CinzelDecorative_400Regular' : 'System';
 
+  const t = theme;
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
@@ -64,8 +66,6 @@ export default function AuthScreen({ navigation }) {
     navigation.replace('Main');
   };
 
-  const t = theme;
-
   return (
     <View style={[styles.container, { backgroundColor: t.bg }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -77,13 +77,11 @@ export default function AuthScreen({ navigation }) {
             <Text style={[styles.logoSub, { fontFamily: cinzel }]}>IT'S TIME TO LEVEL UP</Text>
           </Animated.View>
 
-          {/* Subtitle */}
           <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
             <Text style={[styles.subtitle, { color: t.text }]}>
               {isLogin ? 'Log in to your account below.' : 'Create your account below.'}
             </Text>
 
-            {/* Username (signup only) */}
             {!isLogin && (
               <TextInput
                 style={[styles.input, { backgroundColor: t.card, borderColor: t.cardBorder, color: t.text }]}
@@ -91,11 +89,10 @@ export default function AuthScreen({ navigation }) {
                 placeholderTextColor={t.textMuted}
                 value={username}
                 onChangeText={setUsername}
-                autoCapitalize="none"
+                autoCapitalize="words"
               />
             )}
 
-            {/* Email */}
             <TextInput
               style={[styles.input, { backgroundColor: t.card, borderColor: t.cardBorder, color: t.text }]}
               placeholder="E-mail address"
@@ -106,7 +103,6 @@ export default function AuthScreen({ navigation }) {
               autoCapitalize="none"
             />
 
-            {/* Password */}
             <View style={[styles.passWrap, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
               <TextInput
                 style={[styles.passInput, { color: t.text }]}
@@ -121,59 +117,66 @@ export default function AuthScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            {/* Forgot + Login row */}
-            <View style={styles.loginRow}>
+            {/* Login row */}
+            <View style={[styles.actionRow, !isLogin && styles.actionRowSignup]}>
               {isLogin && (
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => triggerHaptic('light')}>
                   <Text style={[styles.forgotText, { color: t.textMuted }]}>Forgot password?</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
-                style={[styles.loginBtn, loading && { opacity: 0.6 }]}
+                style={[styles.submitBtn, loading && { opacity: 0.6 }]}
                 onPress={handleSubmit}
                 activeOpacity={0.85}
               >
-                <Text style={styles.loginBtnText}>{loading ? 'Loading...' : isLogin ? 'Log in' : 'Sign up'}</Text>
+                <Text style={styles.submitBtnText}>
+                  {loading ? 'Loading...' : isLogin ? 'Log in' : 'Sign up'}
+                </Text>
               </TouchableOpacity>
             </View>
 
-            {/* Create account row */}
+            {/* Switch mode */}
             <TouchableOpacity
-              style={[styles.createRow, { backgroundColor: t.card, borderColor: t.cardBorder }]}
+              style={[styles.switchRow, { backgroundColor: t.card, borderColor: t.cardBorder }]}
               onPress={() => { triggerHaptic('light'); setIsLogin(!isLogin); }}
             >
-              <Text style={[styles.createText, { color: t.textSub }]}>
+              <Text style={[styles.switchText, { color: t.textSub }]}>
                 {isLogin ? "You don't have an account?" : 'Already have an account?'}
               </Text>
-              <Text style={[styles.createLink, { color: t.accent }]}>
+              <Text style={[styles.switchLink, { color: t.accent }]}>
                 {isLogin ? ' Create ›' : ' Log in ›'}
               </Text>
             </TouchableOpacity>
 
             {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={[styles.dividerLine, { backgroundColor: t.cardBorder }]} />
-              <Text style={[styles.dividerText, { color: t.textMuted }]}>or continue with</Text>
-              <View style={[styles.dividerLine, { backgroundColor: t.cardBorder }]} />
+            <View style={styles.divRow}>
+              <View style={[styles.divLine, { backgroundColor: t.cardBorder }]} />
+              <Text style={[styles.divText, { color: t.textMuted }]}>or continue with</Text>
+              <View style={[styles.divLine, { backgroundColor: t.cardBorder }]} />
             </View>
 
-            {/* Social buttons */}
-            <View style={styles.socialRow}>
-              <TouchableOpacity
-                style={styles.googleBtn}
-                onPress={() => { triggerHaptic('light'); Alert.alert('Coming Soon', 'Google Sign-In in next update.'); }}
-              >
+            {/* Google button */}
+            <TouchableOpacity
+              style={[styles.googleBtn, { backgroundColor: t.card, borderColor: t.cardBorder }]}
+              onPress={() => { triggerHaptic('light'); Alert.alert('Coming Soon', 'Google Sign-In in next update.'); }}
+              activeOpacity={0.8}
+            >
+              {/* Real Google G icon using colored text segments */}
+              <View style={styles.googleIconCircle}>
                 <Text style={styles.googleG}>G</Text>
-              </TouchableOpacity>
+              </View>
+              <Text style={[styles.googleBtnText, { color: t.text }]}>Continue with Google</Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.guestBtn, { backgroundColor: t.card, borderColor: t.cardBorder }]}
-                onPress={handleGuest}
-              >
-                <Ionicons name="person-outline" size={18} color={t.textSub} style={{ marginRight: 8 }} />
-                <Text style={[styles.guestText, { color: t.textSub }]}>Continue as Guest</Text>
-              </TouchableOpacity>
-            </View>
+            {/* Guest button */}
+            <TouchableOpacity
+              style={[styles.guestBtn, { backgroundColor: t.card, borderColor: t.cardBorder }]}
+              onPress={handleGuest}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="person-outline" size={18} color={t.textSub} style={{ marginRight: 10 }} />
+              <Text style={[styles.guestBtnText, { color: t.textSub }]}>Continue as Guest</Text>
+            </TouchableOpacity>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -183,47 +186,67 @@ export default function AuthScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingVertical: 60 },
-  logoWrap: { alignItems: 'center', marginBottom: 36 },
-  logoText: { fontSize: 36, letterSpacing: 4, textShadowColor: '#7B4FFF', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20 },
+  scroll: { flexGrow: 1, paddingHorizontal: 24, paddingTop: 64, paddingBottom: 40 },
+  logoWrap: { alignItems: 'center', marginBottom: 40 },
+  logoText: {
+    fontSize: 34, letterSpacing: 4,
+    textShadowColor: '#7B4FFF', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20,
+  },
   logoSub: { fontSize: 10, color: '#7B4FFF', letterSpacing: 4, marginTop: 8 },
-  subtitle: { fontSize: 16, fontWeight: '500', marginBottom: 24, textAlign: 'center' },
+  subtitle: { fontSize: 16, fontWeight: '500', marginBottom: 24 },
   input: {
-    borderRadius: 14, borderWidth: 1, paddingHorizontal: 18,
-    paddingVertical: 16, fontSize: 15, marginBottom: 14,
+    borderRadius: 14, borderWidth: 1,
+    paddingHorizontal: 18, paddingVertical: 16,
+    fontSize: 15, marginBottom: 12,
   },
   passWrap: {
-    borderRadius: 14, borderWidth: 1, flexDirection: 'row',
-    alignItems: 'center', marginBottom: 14, paddingHorizontal: 18,
+    borderRadius: 14, borderWidth: 1,
+    flexDirection: 'row', alignItems: 'center',
+    marginBottom: 16, paddingHorizontal: 18,
   },
   passInput: { flex: 1, paddingVertical: 16, fontSize: 15 },
   eyeBtn: { padding: 4 },
-  loginRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  actionRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 20,
+  },
+  actionRowSignup: { justifyContent: 'flex-start' },
   forgotText: { fontSize: 13 },
-  loginBtn: {
+  submitBtn: {
     backgroundColor: '#29B6F6', borderRadius: 50,
-    paddingVertical: 14, paddingHorizontal: 32,
+    paddingVertical: 13, paddingHorizontal: 28,
   },
-  loginBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  createRow: {
-    flexDirection: 'row', alignItems: 'center', borderRadius: 14,
-    borderWidth: 1, padding: 16, marginBottom: 24,
+  submitBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  switchRow: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 14, borderWidth: 1,
+    padding: 16, marginBottom: 24,
   },
-  createText: { fontSize: 14 },
-  createLink: { fontSize: 14, fontWeight: '700' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  dividerLine: { flex: 1, height: 1 },
-  dividerText: { marginHorizontal: 12, fontSize: 13 },
-  socialRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  switchText: { fontSize: 14 },
+  switchLink: { fontSize: 14, fontWeight: '700' },
+  divRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  divLine: { flex: 1, height: 1 },
+  divText: { marginHorizontal: 12, fontSize: 12 },
   googleBtn: {
-    width: 52, height: 52, borderRadius: 26,
-    backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 3,
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: 14, borderWidth: 1,
+    paddingVertical: 14, paddingHorizontal: 18,
+    marginBottom: 12,
   },
-  googleG: { fontSize: 22, fontWeight: '900', color: '#4285F4' },
+  googleIconCircle: {
+    width: 28, height: 28, borderRadius: 14,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center', alignItems: 'center',
+    marginRight: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2, shadowRadius: 2, elevation: 2,
+  },
+  googleG: { fontSize: 16, fontWeight: '900', color: '#4285F4' },
+  googleBtnText: { fontSize: 15, fontWeight: '500' },
   guestBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    borderRadius: 14, borderWidth: 1, paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    borderRadius: 14, borderWidth: 1,
+    paddingVertical: 14, paddingHorizontal: 18,
   },
-  guestText: { fontSize: 14, fontWeight: '500' },
+  guestBtnText: { fontSize: 15 },
 });
