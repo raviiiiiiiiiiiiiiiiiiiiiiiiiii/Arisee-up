@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import * as Haptics from 'expo-haptics';
+import { Audio } from 'expo-av';
 
 const AppContext = createContext({});
 export const useAppContext = () => useContext(AppContext);
@@ -32,6 +34,11 @@ export function AppProvider({ children }) {
   useEffect(() => {
     loadSettings();
     requestAndSetupNotifications();
+    // Pre-load audio mode on mount
+    Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+    }).catch(() => {});
   }, []);
 
   const loadSettings = async () => {
@@ -56,32 +63,47 @@ export function AppProvider({ children }) {
     } catch {}
   };
 
-  // Haptics - inline import to avoid module issues
+  // ── Haptics ── direct import, no dynamic
   const triggerHaptic = async (type = 'light') => {
     if (!vibrationEnabled) return;
     try {
-      const Haptics = await import('expo-haptics');
-      if (type === 'light') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      else if (type === 'medium') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      else if (type === 'heavy') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      else if (type === 'success') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e) { console.log('haptic error', e); }
+      switch (type) {
+        case 'light':
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          break;
+        case 'medium':
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          break;
+        case 'heavy':
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          break;
+        case 'success':
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          break;
+        case 'error':
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          break;
+      }
+    } catch (e) {}
   };
 
-  // Sound - inline import
+  // ── Sound ── direct import, simple beep tones
   const playSound = async (type = 'tap') => {
     if (!soundEnabled) return;
     try {
-      const { Audio } = await import('expo-av');
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       const uri = type === 'complete'
         ? 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'
         : 'https://www.soundjay.com/buttons/sounds/button-09.mp3';
-      const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true, volume: 0.5 });
-      sound.setOnPlaybackStatusUpdate(s => {
-        if (s.didJustFinish) sound.unloadAsync();
+      const { sound } = await Audio.Sound.createAsync(
+        { uri },
+        { shouldPlay: true, volume: 0.6, isMuted: false }
+      );
+      sound.setOnPlaybackStatusUpdate(status => {
+        if (status.didJustFinish) {
+          sound.unloadAsync().catch(() => {});
+        }
       });
-    } catch (e) { console.log('sound error', e); }
+    } catch (e) {}
   };
 
   const requestAndSetupNotifications = async () => {
@@ -93,7 +115,6 @@ export function AppProvider({ children }) {
         finalStatus = status;
       }
       if (finalStatus !== 'granted') return;
-      // Immediate test notification
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "SYSTEM",
@@ -132,11 +153,17 @@ export function AppProvider({ children }) {
   const toggleSound = async (val) => {
     setSoundEnabled(val);
     await saveSettings('soundEffects', val);
+    if (val) {
+      // Test sound when enabling
+      setTimeout(() => playSound('tap'), 100);
+    }
   };
   const toggleVibration = async (val) => {
     setVibrationEnabled(val);
     await saveSettings('vibration', val);
-    if (val) triggerHaptic('medium');
+    if (val) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
   };
   const toggleNotifications = async (val) => {
     setNotificationsEnabled(val);
