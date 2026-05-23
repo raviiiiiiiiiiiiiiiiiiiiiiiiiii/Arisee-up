@@ -5,12 +5,17 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#0A0A12"
     },
     "android": {
       "package": "com.ariseup.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0A0A12"
+      },
       "permissions": [
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED",
