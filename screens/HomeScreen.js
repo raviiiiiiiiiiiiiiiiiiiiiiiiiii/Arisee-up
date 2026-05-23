@@ -323,7 +323,24 @@ export default function HomeScreen() {
 
     const allCompleted = updated.every(t2 => t2.done);
     if (allCompleted) {
-      u.streak = (u.streak || 0) + 1;
+      // Streak is calendar-date based — only increment once per day
+      const todayStr = new Date().toISOString().split('T')[0];
+      const lastStreakDay = u.lastStreakDay || null;
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      if (lastStreakDay === todayStr) {
+        // Already counted today — don't increment
+      } else if (lastStreakDay === yesterdayStr) {
+        // Completed yesterday too — continue streak
+        u.streak = (u.streak || 0) + 1;
+        u.lastStreakDay = todayStr;
+      } else {
+        // Missed a day or first time — reset to 1
+        u.streak = 1;
+        u.lastStreakDay = todayStr;
+      }
       await AsyncStorage.setItem('user_data', JSON.stringify(u));
       setUserData(u);
       setAllDone(true);
