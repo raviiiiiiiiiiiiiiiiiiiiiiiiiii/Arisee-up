@@ -1,7 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
-import { Audio } from 'expo-av';
 import * as Notifications from 'expo-notifications';
 
 const AppContext = createContext({});
@@ -31,7 +29,10 @@ export function AppProvider({ children }) {
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-  useEffect(() => { loadSettings(); requestAndSetupNotifications(); }, []);
+  useEffect(() => {
+    loadSettings();
+    requestAndSetupNotifications();
+  }, []);
 
   const loadSettings = async () => {
     try {
@@ -55,41 +56,44 @@ export function AppProvider({ children }) {
     } catch {}
   };
 
+  // Haptics - inline import to avoid module issues
   const triggerHaptic = async (type = 'light') => {
     if (!vibrationEnabled) return;
     try {
+      const Haptics = await import('expo-haptics');
       if (type === 'light') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       else if (type === 'medium') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       else if (type === 'heavy') await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       else if (type === 'success') await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
+    } catch (e) { console.log('haptic error', e); }
   };
 
+  // Sound - inline import
   const playSound = async (type = 'tap') => {
     if (!soundEnabled) return;
     try {
+      const { Audio } = await import('expo-av');
       await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
       const uri = type === 'complete'
         ? 'https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3'
         : 'https://www.soundjay.com/buttons/sounds/button-09.mp3';
-      const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true, volume: 0.4 });
-      sound.setOnPlaybackStatusUpdate(s => { if (s.didJustFinish) sound.unloadAsync(); });
-    } catch {}
+      const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: true, volume: 0.5 });
+      sound.setOnPlaybackStatusUpdate(s => {
+        if (s.didJustFinish) sound.unloadAsync();
+      });
+    } catch (e) { console.log('sound error', e); }
   };
 
   const requestAndSetupNotifications = async () => {
     try {
       const { status: existing } = await Notifications.getPermissionsAsync();
       let finalStatus = existing;
-
       if (existing !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-
       if (finalStatus !== 'granted') return;
-
-      // Immediate test notification so user knows it works
+      // Immediate test notification
       await Notifications.scheduleNotificationAsync({
         content: {
           title: "SYSTEM",
@@ -98,8 +102,6 @@ export function AppProvider({ children }) {
         },
         trigger: { seconds: 3 },
       });
-
-      // Schedule every 2 hours throughout the day
       await scheduleEvery2Hours();
     } catch {}
   };
@@ -107,22 +109,12 @@ export function AppProvider({ children }) {
   const scheduleEvery2Hours = async () => {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
-
-      // Schedule notifications at every 2-hour interval across the day
       const hours = [8, 10, 12, 14, 16, 18, 20, 22];
       for (let i = 0; i < hours.length; i++) {
         const quote = SL_QUOTES_NOTIF[i % SL_QUOTES_NOTIF.length];
         await Notifications.scheduleNotificationAsync({
-          content: {
-            title: quote.title,
-            body: quote.body,
-            sound: true,
-          },
-          trigger: {
-            hour: hours[i],
-            minute: 0,
-            repeats: true,
-          },
+          content: { title: quote.title, body: quote.body, sound: true },
+          trigger: { hour: hours[i], minute: 0, repeats: true },
         });
       }
     } catch {}
@@ -132,18 +124,26 @@ export function AppProvider({ children }) {
     try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch {}
   };
 
-  const toggleDarkMode = async (val) => { setDarkMode(val); await saveSettings('darkMode', val); triggerHaptic('light'); };
-  const toggleSound = async (val) => { setSoundEnabled(val); await saveSettings('soundEffects', val); };
-  const toggleVibration = async (val) => { setVibrationEnabled(val); await saveSettings('vibration', val); if (val) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); };
+  const toggleDarkMode = async (val) => {
+    setDarkMode(val);
+    await saveSettings('darkMode', val);
+    triggerHaptic('light');
+  };
+  const toggleSound = async (val) => {
+    setSoundEnabled(val);
+    await saveSettings('soundEffects', val);
+  };
+  const toggleVibration = async (val) => {
+    setVibrationEnabled(val);
+    await saveSettings('vibration', val);
+    if (val) triggerHaptic('medium');
+  };
   const toggleNotifications = async (val) => {
     setNotificationsEnabled(val);
     await saveSettings('notifications', val);
     triggerHaptic('light');
-    if (val) {
-      await requestAndSetupNotifications();
-    } else {
-      await cancelNotifications();
-    }
+    if (val) await requestAndSetupNotifications();
+    else await cancelNotifications();
   };
 
   const theme = darkMode ? {
@@ -151,11 +151,13 @@ export function AppProvider({ children }) {
     text: '#FFFFFF', textSub: '#AAAACC', textMuted: '#555577',
     accent: '#7B4FFF', accentLight: '#A78BFF',
     tabBg: '#0F0F1C', tabBorder: '#1E1E30', inputBg: '#10142A',
+    dark: true,
   } : {
     bg: '#F2F2FA', card: '#FFFFFF', cardBorder: '#E0E0EE',
     text: '#111122', textSub: '#444466', textMuted: '#888899',
     accent: '#7B4FFF', accentLight: '#5B2FFF',
     tabBg: '#FFFFFF', tabBorder: '#E0E0EE', inputBg: '#EEEEFF',
+    dark: false,
   };
 
   return (
