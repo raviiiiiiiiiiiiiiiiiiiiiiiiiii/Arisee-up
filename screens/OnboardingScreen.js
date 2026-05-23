@@ -14,25 +14,33 @@ const SLIDES = [
     image: require('../assets/onboarding/slide1.png'),
     title: 'Are you ready\nto lock in?',
     warning: "You've seen the path ahead. Choose to walk it, or remain where you are.",
-    type: 'continue',
+    type: 'yesno',
+    yesLabel: 'CONTINUE',
+    noLabel: 'Not Yet',
   },
   {
     id: 2,
     image: require('../assets/onboarding/slide2.png'),
     title: 'Are you willing to challenge your own limits to grow?',
     type: 'yesno',
+    yesLabel: 'Yes',
+    noLabel: 'No',
   },
   {
     id: 3,
     image: require('../assets/onboarding/slide3.png'),
     title: 'Would you invest in yourself if you knew it could change your life?',
     type: 'yesno',
+    yesLabel: 'Yes',
+    noLabel: 'No',
   },
   {
     id: 4,
     image: require('../assets/onboarding/slide4.png'),
     title: 'Do you believe that small changes can lead to big transformations?',
     type: 'yesno',
+    yesLabel: 'ARISE',
+    noLabel: 'No',
     last: true,
   },
 ];
@@ -77,14 +85,11 @@ export default function OnboardingScreen({ navigation }) {
       <ImageBackground source={slide.image} style={styles.bg} resizeMode="cover">
         <View style={styles.overlay} />
 
-        {/* Logo */}
         <View style={styles.topBar}>
           <Text style={[styles.logoText, { fontFamily: cinzelBold }]}>ARISE</Text>
         </View>
 
-        {/* Bottom content */}
         <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: textAnim }] }]}>
-
           <Text style={[styles.title, { fontFamily: cinzel }]}>{slide.title}</Text>
 
           {slide.warning && (
@@ -94,32 +99,20 @@ export default function OnboardingScreen({ navigation }) {
             </Text>
           )}
 
-          {/* Dots */}
           <View style={styles.dotsRow}>
             {SLIDES.map((_, i) => (
               <View key={i} style={[styles.dot, i === current && styles.dotActive]} />
             ))}
           </View>
 
-          {/* Buttons */}
-          {slide.type === 'continue' && (
-            <TouchableOpacity style={styles.continueBtn} onPress={goNext} activeOpacity={0.85}>
-              <Text style={[styles.continueBtnText, { fontFamily: cinzelBold }]}>CONTINUE</Text>
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={styles.noBtn} onPress={goNext}>
+              <Text style={[styles.noBtnText, { fontFamily: cinzel }]}>{slide.noLabel}</Text>
             </TouchableOpacity>
-          )}
-
-          {slide.type === 'yesno' && (
-            <View style={styles.btnRow}>
-              <TouchableOpacity style={styles.noBtn} onPress={goNext}>
-                <Text style={[styles.noBtnText, { fontFamily: cinzel }]}>No</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.yesBtn} onPress={goNext}>
-                <Text style={[styles.yesBtnText, { fontFamily: cinzelBold }]}>
-                  {slide.last ? 'ARISE' : 'Yes'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+            <TouchableOpacity style={styles.yesBtn} onPress={goNext}>
+              <Text style={[styles.yesBtnText, { fontFamily: cinzelBold }]}>{slide.yesLabel}</Text>
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </ImageBackground>
     </View>
@@ -149,15 +142,6 @@ const styles = StyleSheet.create({
   dotsRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
   dot: { width: 24, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.25)' },
   dotActive: { backgroundColor: '#FFFFFF', width: 40 },
-
-  continueBtn: {
-    backgroundColor: '#29B6F6', borderRadius: 50,
-    paddingVertical: 18, alignItems: 'center',
-    shadowColor: '#29B6F6', shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4, shadowRadius: 12, elevation: 8,
-  },
-  continueBtnText: { color: '#FFFFFF', fontSize: 14, letterSpacing: 3 },
-
   btnRow: { flexDirection: 'row', gap: 12 },
   noBtn: {
     flex: 1, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
@@ -165,6 +149,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
   },
   noBtnText: { color: 'rgba(255,255,255,0.55)', fontSize: 16 },
-  yesBtn: { flex: 2, backgroundColor: '#FFFFFF', borderRadius: 50, paddingVertical: 16, alignItems: 'center' },
-  yesBtnText: { color: '#000000', fontSize: 16, letterSpacing: 2 },
+  yesBtn: { flex: 2, backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', borderRadius: 50, paddingVertical: 16, alignItems: 'center' },
+  yesBtnText: { color: '#FFFFFF', fontSize: 16, letterSpacing: 2 },
 });
