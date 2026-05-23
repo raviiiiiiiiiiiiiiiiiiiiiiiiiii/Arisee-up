@@ -7,12 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
 
 export default function SettingsScreen({ navigation }) {
-  const {
-    darkMode, theme,
-    notificationsEnabled,
-    toggleDarkMode, toggleNotifications,
-  } = useAppContext();
-
+  const { darkMode, theme, notificationsEnabled, toggleDarkMode, toggleNotifications } = useAppContext();
   const [userData, setUserData] = useState({ username: 'Hunter', email: '' });
 
   const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
@@ -22,8 +17,10 @@ export default function SettingsScreen({ navigation }) {
 
   useFocusEffect(useCallback(() => {
     (async () => {
-      const user = await AsyncStorage.getItem('user_data');
-      if (user) setUserData(JSON.parse(user));
+      try {
+        const user = await AsyncStorage.getItem('user_data');
+        if (user) setUserData(JSON.parse(user));
+      } catch {}
     })();
   }, []));
 
@@ -31,7 +28,8 @@ export default function SettingsScreen({ navigation }) {
     Alert.alert('Log Out', 'Are you sure you want to leave the guild?', [
       { text: 'Stay', style: 'cancel' },
       {
-        text: 'Log Out', style: 'destructive',
+        text: 'Log Out',
+        style: 'destructive',
         onPress: async () => {
           await AsyncStorage.multiRemove([
             'user_loggedin',
@@ -47,59 +45,64 @@ export default function SettingsScreen({ navigation }) {
     ]);
   };
 
-  const TOGGLES = [
-    {
-      label: 'Notifications',
-      sub: 'Daily quest reminders',
-      icon: <Ionicons name="notifications-outline" size={20} color={t.accentLight} />,
-      value: notificationsEnabled,
-      onToggle: async (val) => { await toggleNotifications(val); },
-    },
-    {
-      label: 'Dark Mode',
-      sub: darkMode ? 'Currently dark' : 'Currently light',
-      icon: <Ionicons name={darkMode ? 'moon' : 'sunny-outline'} size={20} color={t.accentLight} />,
-      value: darkMode,
-      onToggle: async (val) => { await toggleDarkMode(val); },
-    },
-  ];
+  const iconBg = darkMode ? '#1E1E35' : '#EEEEFF';
 
   return (
     <View style={[styles.container, { backgroundColor: t.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+
+        {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.appName, { fontFamily: cinzelBold, color: t.accentLight }]}>ARISE</Text>
           <Text style={[styles.pageTitle, { color: t.text }]}>Settings</Text>
         </View>
 
+        {/* Toggles card */}
         <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
-          {TOGGLES.map((item, i) => (
-            <View key={item.label}
-              style={[styles.row, i < TOGGLES.length - 1 && [styles.rowBorder, { borderBottomColor: t.cardBorder }]]}>
-              <View style={[styles.iconWrap, { backgroundColor: t.dark ? '#1E1E35' : '#EEEEFF' }]}>
-                {item.icon}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.rowLabel, { color: t.text }]}>{item.label}</Text>
-                {item.sub && <Text style={[styles.rowSub, { color: t.textMuted }]}>{item.sub}</Text>}
-              </View>
-              <Switch
-                value={item.value}
-                onValueChange={item.onToggle}
-                trackColor={{ false: t.cardBorder, true: t.accent }}
-                thumbColor="#FFFFFF"
-                ios_backgroundColor={t.cardBorder}
-              />
+
+          {/* Notifications */}
+          <View style={[styles.row, styles.rowBorder, { borderBottomColor: t.cardBorder }]}>
+            <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
+              <Ionicons name="notifications-outline" size={20} color={t.accentLight} />
             </View>
-          ))}
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: t.text }]}>Notifications</Text>
+              <Text style={[styles.rowSub, { color: t.textMuted }]}>Daily quest reminders</Text>
+            </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={toggleNotifications}
+              trackColor={{ false: t.cardBorder, true: t.accent }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor={t.cardBorder}
+            />
+          </View>
+
+          {/* Dark Mode */}
+          <View style={styles.row}>
+            <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
+              <Ionicons name={darkMode ? 'moon' : 'sunny-outline'} size={20} color={t.accentLight} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: t.text }]}>Dark Mode</Text>
+              <Text style={[styles.rowSub, { color: t.textMuted }]}>{darkMode ? 'Currently dark' : 'Currently light'}</Text>
+            </View>
+            <Switch
+              value={darkMode}
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: t.cardBorder, true: t.accent }}
+              thumbColor="#FFFFFF"
+              ios_backgroundColor={t.cardBorder}
+            />
+          </View>
         </View>
 
+        {/* Account card */}
         <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
-          <TouchableOpacity
-            style={[styles.row, styles.rowBorder, { borderBottomColor: t.cardBorder }]}
-            onPress={() => triggerHaptic('light')}
-          >
-            <View style={[styles.iconWrap, { backgroundColor: t.dark ? '#1E1E35' : '#EEEEFF' }]}>
+
+          {/* Account info */}
+          <View style={[styles.row, styles.rowBorder, { borderBottomColor: t.cardBorder }]}>
+            <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
               <Ionicons name="person-outline" size={20} color={t.accentLight} />
             </View>
             <View style={{ flex: 1 }}>
@@ -107,13 +110,14 @@ export default function SettingsScreen({ navigation }) {
               <Text style={[styles.rowSub, { color: t.textMuted }]}>{userData.username}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={t.textMuted} />
-          </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.row} onPress={handleLogout}>
+          {/* Logout */}
+          <TouchableOpacity style={styles.row} onPress={handleLogout} activeOpacity={0.7}>
             <View style={[styles.iconWrap, { backgroundColor: '#FF404018' }]}>
-              <MaterialIcons name="logout" size={20} color="#FF4040" />
+              <Ionicons name="log-out-outline" size={20} color="#FF4040" />
             </View>
-            <Text style={[styles.rowLabel, { color: '#FF4040', flex: 1 }]}>Logout</Text>
+            <Text style={[styles.rowLabel, { flex: 1, color: '#FF4040' }]}>Logout</Text>
             <Ionicons name="chevron-forward" size={18} color={t.textMuted} />
           </TouchableOpacity>
         </View>
@@ -134,7 +138,7 @@ const styles = StyleSheet.create({
   appName: { fontSize: 14, letterSpacing: 6, marginBottom: 8 },
   pageTitle: { fontSize: 34, fontWeight: '300' },
   card: { borderRadius: 16, borderWidth: 1, marginBottom: 16, overflow: 'hidden' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 15 },
   rowBorder: { borderBottomWidth: 1 },
   iconWrap: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   rowLabel: { fontSize: 15 },
