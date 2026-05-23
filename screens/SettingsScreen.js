@@ -41,6 +41,8 @@ export default function SettingsScreen({ navigation }) {
             'user_data',
             'tasks',
             'last_task_day',
+            'xp_daily_history',
+            'xp_daily_dates',
           ]);
           navigation.replace('Auth');
         },
