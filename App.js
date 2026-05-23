@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import NetInfo from '@react-native-community/netinfo';
 
 import { AppProvider, useAppContext } from './context/AppContext';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -13,6 +14,7 @@ import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import ProgressScreen from './screens/ProgressScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import OfflineScreen from './screens/OfflineScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -55,7 +57,41 @@ function MainTabs() {
 
 function AppNavigator() {
   const [initialRoute, setInitialRoute] = useState(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [checkingNetwork, setCheckingNetwork] = useState(true);
   const { theme } = useAppContext();
+
+  const checkNetwork = useCallback(async () => {
+    setCheckingNetwork(true);
+    try {
+      const state = await NetInfo.fetch();
+      setIsOnline(state.isConnected && state.isInternetReachable !== false);
+    } catch {
+      setIsOnline(false);
+    }
+    setCheckingNetwork(false);
+  }, []);
+
+  useEffect(() => {
+    // Initial check
+    checkNetwork();
+
+    // Subscribe to network changes
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const online = state.isConnected && state.isInternetReachable !== false;
+      setIsOnline(online);
+    });
+
+    // Re-check when app comes back to foreground
+    const appStateSub = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') checkNetwork();
+    });
+
+    return () => {
+      unsubscribe();
+      appStateSub.remove();
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -71,17 +107,23 @@ function AppNavigator() {
     })();
   }, []);
 
-  if (!initialRoute) {
+  // Show loading spinner while checking network or route
+  if (checkingNetwork || !initialRoute) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.bg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator color={theme.accent} size="large" />
+      <View style={{ flex: 1, backgroundColor: '#07090F', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#A78BFF" size="large" />
       </View>
     );
   }
 
+  // Show offline screen if no internet
+  if (!isOnline) {
+    return <OfflineScreen onRetry={checkNetwork} />;
+  }
+
   return (
     <NavigationContainer>
-      <StatusBar style={theme.bg === '#0A0A12' ? 'light' : 'dark'} />
+      <StatusBar style={theme.dark ? 'light' : 'dark'} />
       <Stack.Navigator
         screenOptions={{ headerShown: false, animation: 'fade' }}
         initialRouteName={initialRoute}
