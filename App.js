@@ -10,7 +10,6 @@ import NetInfo from '@react-native-community/netinfo';
 
 import { AppProvider, useAppContext } from './context/AppContext';
 import OnboardingScreen from './screens/OnboardingScreen';
-import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
 import ProgressScreen from './screens/ProgressScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -73,41 +72,28 @@ function AppNavigator() {
   }, []);
 
   useEffect(() => {
-    // Initial check
     checkNetwork();
-
-    // Subscribe to network changes
     const unsubscribe = NetInfo.addEventListener(state => {
-      const online = state.isConnected && state.isInternetReachable !== false;
-      setIsOnline(online);
+      setIsOnline(state.isConnected && state.isInternetReachable !== false);
     });
-
-    // Re-check when app comes back to foreground
     const appStateSub = AppState.addEventListener('change', nextState => {
       if (nextState === 'active') checkNetwork();
     });
-
-    return () => {
-      unsubscribe();
-      appStateSub.remove();
-    };
+    return () => { unsubscribe(); appStateSub.remove(); };
   }, []);
 
   useEffect(() => {
     (async () => {
       try {
         const done = await AsyncStorage.getItem('onboarding_done');
-        const loggedIn = await AsyncStorage.getItem('user_loggedin');
-        if (!done) setInitialRoute('Onboarding');
-        else if (!loggedIn) setInitialRoute('Auth');
-        else setInitialRoute('Main');
+        // No auth — go straight to Main after onboarding
+        setInitialRoute(done ? 'Main' : 'Onboarding');
       } catch {
         setInitialRoute('Onboarding');
       }
     })();
   }, []);
 
-  // Show loading spinner while checking network or route
   if (checkingNetwork || !initialRoute) {
     return (
       <View style={{ flex: 1, backgroundColor: '#07090F', justifyContent: 'center', alignItems: 'center' }}>
@@ -116,7 +102,6 @@ function AppNavigator() {
     );
   }
 
-  // Show offline screen if no internet
   if (!isOnline) {
     return <OfflineScreen onRetry={checkNetwork} />;
   }
@@ -129,7 +114,6 @@ function AppNavigator() {
         initialRouteName={initialRoute}
       >
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-        <Stack.Screen name="Auth" component={AuthScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>
