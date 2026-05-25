@@ -32,7 +32,20 @@ export function AppProvider({ children }) {
   useEffect(() => {
     loadSettings();
     requestAndSetupNotifications();
+    initUserData();
   }, []);
+
+  const initUserData = async () => {
+    try {
+      const existing = await AsyncStorage.getItem('user_data');
+      if (!existing) {
+        await AsyncStorage.setItem('user_data', JSON.stringify({
+          username: 'Hunter',
+          level: 1, xp: 0, totalXP: 0, streak: 0,
+        }));
+      }
+    } catch {}
+  };
 
   const loadSettings = async () => {
     try {
