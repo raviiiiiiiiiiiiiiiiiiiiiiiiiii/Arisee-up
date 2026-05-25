@@ -1,49 +1,17 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
 
-export default function SettingsScreen({ navigation }) {
+export default function SettingsScreen() {
   const { darkMode, theme, notificationsEnabled, toggleDarkMode, toggleNotifications } = useAppContext();
-  const [userData, setUserData] = useState({ username: 'Hunter', email: '' });
 
   const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
   const cinzelBold = fontsLoaded ? 'CinzelDecorative_700Bold' : 'System';
   const cinzel = fontsLoaded ? 'CinzelDecorative_400Regular' : 'System';
   const t = theme;
-
-  useFocusEffect(useCallback(() => {
-    (async () => {
-      try {
-        const user = await AsyncStorage.getItem('user_data');
-        if (user) setUserData(JSON.parse(user));
-      } catch {}
-    })();
-  }, []));
-
-  const handleLogout = () => {
-    Alert.alert('Log Out', 'Are you sure you want to leave the guild?', [
-      { text: 'Stay', style: 'cancel' },
-      {
-        text: 'Log Out',
-        style: 'destructive',
-        onPress: async () => {
-          await AsyncStorage.multiRemove([
-            'user_loggedin',
-            'user_data',
-            'tasks',
-            'last_task_day',
-            'xp_daily_history',
-            'xp_daily_dates',
-          ]);
-          navigation.replace('Auth');
-        },
-      },
-    ]);
-  };
 
   const iconBg = darkMode ? '#1E1E35' : '#EEEEFF';
 
@@ -57,7 +25,7 @@ export default function SettingsScreen({ navigation }) {
           <Text style={[styles.pageTitle, { color: t.text }]}>Settings</Text>
         </View>
 
-        {/* Toggles card */}
+        {/* Toggles */}
         <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
 
           {/* Notifications */}
@@ -95,31 +63,6 @@ export default function SettingsScreen({ navigation }) {
               ios_backgroundColor={t.cardBorder}
             />
           </View>
-        </View>
-
-        {/* Account card */}
-        <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
-
-          {/* Account info */}
-          <View style={[styles.row, styles.rowBorder, { borderBottomColor: t.cardBorder }]}>
-            <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-              <Ionicons name="person-outline" size={20} color={t.accentLight} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: t.text }]}>Account</Text>
-              <Text style={[styles.rowSub, { color: t.textMuted }]}>{userData.username}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={t.textMuted} />
-          </View>
-
-          {/* Logout */}
-          <TouchableOpacity style={styles.row} onPress={handleLogout} activeOpacity={0.7}>
-            <View style={[styles.iconWrap, { backgroundColor: '#FF404018' }]}>
-              <Ionicons name="log-out-outline" size={20} color="#FF4040" />
-            </View>
-            <Text style={[styles.rowLabel, { flex: 1, color: '#FF4040' }]}>Logout</Text>
-            <Ionicons name="chevron-forward" size={18} color={t.textMuted} />
-          </TouchableOpacity>
         </View>
 
         <Text style={[styles.version, { fontFamily: cinzel, color: t.textMuted }]}>
