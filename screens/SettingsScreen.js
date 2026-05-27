@@ -1,68 +1,87 @@
 import React, { useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFonts, CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative';
-import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
 
 export default function SettingsScreen() {
-  const { darkMode, theme, notificationsEnabled, toggleDarkMode, toggleNotifications } = useAppContext();
+  const {
+    darkMode, theme,
+    notificationsEnabled, hapticsEnabled, soundEnabled,
+    toggleDarkMode, toggleNotifications, toggleHaptics, toggleSound,
+  } = useAppContext();
 
   const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
   const cinzelBold = fontsLoaded ? 'CinzelDecorative_700Bold' : 'System';
   const cinzel = fontsLoaded ? 'CinzelDecorative_400Regular' : 'System';
   const t = theme;
-
   const iconBg = darkMode ? '#1E1E35' : '#EEEEFF';
+
+  const TOGGLES = [
+    {
+      label: 'Notifications',
+      sub: 'Daily quest reminders',
+      icon: <Ionicons name="notifications-outline" size={20} color={t.accentLight} />,
+      value: notificationsEnabled,
+      onToggle: toggleNotifications,
+    },
+    {
+      label: 'Haptic Feedback',
+      sub: 'Vibration on interactions',
+      icon: <MaterialCommunityIcons name="vibrate" size={20} color={t.accentLight} />,
+      value: hapticsEnabled,
+      onToggle: toggleHaptics,
+    },
+    {
+      label: 'Sound Effects',
+      sub: 'Pulse feedback on actions',
+      icon: <Ionicons name="volume-medium-outline" size={20} color={t.accentLight} />,
+      value: soundEnabled,
+      onToggle: toggleSound,
+    },
+    {
+      label: 'Dark Mode',
+      sub: darkMode ? 'Currently dark' : 'Currently light',
+      icon: <Ionicons name={darkMode ? 'moon' : 'sunny-outline'} size={20} color={t.accentLight} />,
+      value: darkMode,
+      onToggle: toggleDarkMode,
+    },
+  ];
 
   return (
     <View style={[styles.container, { backgroundColor: t.bg }]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* Header */}
         <View style={styles.header}>
           <Text style={[styles.appName, { fontFamily: cinzelBold, color: t.accentLight }]}>ARISE</Text>
           <Text style={[styles.pageTitle, { color: t.text }]}>Settings</Text>
         </View>
 
-        {/* Toggles */}
         <View style={[styles.card, { backgroundColor: t.card, borderColor: t.cardBorder }]}>
-
-          {/* Notifications */}
-          <View style={[styles.row, styles.rowBorder, { borderBottomColor: t.cardBorder }]}>
-            <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-              <Ionicons name="notifications-outline" size={20} color={t.accentLight} />
+          {TOGGLES.map((item, i) => (
+            <View
+              key={item.label}
+              style={[
+                styles.row,
+                i < TOGGLES.length - 1 && [styles.rowBorder, { borderBottomColor: t.cardBorder }],
+              ]}
+            >
+              <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
+                {item.icon}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.rowLabel, { color: t.text }]}>{item.label}</Text>
+                <Text style={[styles.rowSub, { color: t.textMuted }]}>{item.sub}</Text>
+              </View>
+              <Switch
+                value={item.value}
+                onValueChange={item.onToggle}
+                trackColor={{ false: t.cardBorder, true: t.accent }}
+                thumbColor="#FFFFFF"
+                ios_backgroundColor={t.cardBorder}
+              />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: t.text }]}>Notifications</Text>
-              <Text style={[styles.rowSub, { color: t.textMuted }]}>Daily quest reminders</Text>
-            </View>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={toggleNotifications}
-              trackColor={{ false: t.cardBorder, true: t.accent }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor={t.cardBorder}
-            />
-          </View>
-
-          {/* Dark Mode */}
-          <View style={styles.row}>
-            <View style={[styles.iconWrap, { backgroundColor: iconBg }]}>
-              <Ionicons name={darkMode ? 'moon' : 'sunny-outline'} size={20} color={t.accentLight} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.rowLabel, { color: t.text }]}>Dark Mode</Text>
-              <Text style={[styles.rowSub, { color: t.textMuted }]}>{darkMode ? 'Currently dark' : 'Currently light'}</Text>
-            </View>
-            <Switch
-              value={darkMode}
-              onValueChange={toggleDarkMode}
-              trackColor={{ false: t.cardBorder, true: t.accent }}
-              thumbColor="#FFFFFF"
-              ios_backgroundColor={t.cardBorder}
-            />
-          </View>
+          ))}
         </View>
 
         <Text style={[styles.version, { fontFamily: cinzel, color: t.textMuted }]}>
