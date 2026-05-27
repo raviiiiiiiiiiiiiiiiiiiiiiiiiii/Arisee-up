@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import * as Haptics from 'expo-haptics';
+import { Vibration, Platform } from 'react-native';
 
 const AppContext = createContext({});
 export const useAppContext = () => useContext(AppContext);
@@ -25,14 +27,14 @@ const SL_QUOTES_NOTIF = [
 
 export function AppProvider({ children }) {
   const [darkMode, setDarkMode] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   useEffect(() => {
     loadSettings();
-    requestAndSetupNotifications();
     initUserData();
+    requestAndSetupNotifications();
   }, []);
 
   const initUserData = async () => {
@@ -53,9 +55,9 @@ export function AppProvider({ children }) {
       if (s) {
         const p = JSON.parse(s);
         setDarkMode(p.darkMode ?? true);
-        setSoundEnabled(p.soundEffects ?? true);
-        setVibrationEnabled(p.vibration ?? true);
         setNotificationsEnabled(p.notifications ?? true);
+        setHapticsEnabled(p.haptics ?? true);
+        setSoundEnabled(p.sound ?? true);
       }
     } catch {}
   };
@@ -69,9 +71,35 @@ export function AppProvider({ children }) {
     } catch {}
   };
 
-  // Removed haptics and sound — stubs kept so screens don't break
-  const triggerHaptic = async () => {};
-  const playSound = async () => {};
+  const triggerHaptic = (type = 'light') => {
+    if (!hapticsEnabled) return;
+    try {
+      if (type === 'light') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      else if (type === 'medium') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      else if (type === 'heavy') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      else if (type === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      else if (type === 'error') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } catch {}
+  };
+
+  const playSound = (type = 'tap') => {
+    if (!soundEnabled) return;
+    try {
+      if (Platform.OS === 'android') {
+        if (type === 'complete') {
+          Vibration.vibrate([0, 40, 60, 40, 60, 80]);
+        } else {
+          Vibration.vibrate(30);
+        }
+      } else {
+        if (type === 'complete') {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } else {
+          Haptics.selectionAsync();
+        }
+      }
+    } catch {}
+  };
 
   const requestAndSetupNotifications = async () => {
     try {
@@ -112,35 +140,62 @@ export function AppProvider({ children }) {
     try { await Notifications.cancelAllScheduledNotificationsAsync(); } catch {}
   };
 
-  const toggleDarkMode = async (val) => { setDarkMode(val); await saveSettings('darkMode', val); };
-  const toggleSound = async (val) => { setSoundEnabled(val); await saveSettings('soundEffects', val); };
-  const toggleVibration = async (val) => { setVibrationEnabled(val); await saveSettings('vibration', val); };
+  const toggleDarkMode = async (val) => {
+    setDarkMode(val);
+    await saveSettings('darkMode', val);
+    triggerHaptic('light');
+  };
+
   const toggleNotifications = async (val) => {
     setNotificationsEnabled(val);
     await saveSettings('notifications', val);
+    triggerHaptic('light');
     if (val) await requestAndSetupNotifications();
     else await cancelNotifications();
+  };
+
+  const toggleHaptics = async (val) => {
+    // Toggle haptics before disabling so user feels the last vibration
+    if (val) {
+      setHapticsEnabled(true);
+      await saveSettings('haptics', true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } else {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setHapticsEnabled(false);
+      await saveSettings('haptics', false);
+    }
+  };
+
+  const toggleSound = async (val) => {
+    setSoundEnabled(val);
+    await saveSettings('sound', val);
+    triggerHaptic('light');
+    // Give user immediate feedback when turning sound on
+    if (val) {
+      if (Platform.OS === 'android') Vibration.vibrate([0, 40, 60, 40]);
+    }
   };
 
   const theme = darkMode ? {
     bg: '#0A0A12', card: '#12121E', cardBorder: '#1E1E30',
     text: '#FFFFFF', textSub: '#AAAACC', textMuted: '#555577',
     accent: '#7B4FFF', accentLight: '#A78BFF',
-    tabBg: '#0F0F1C', tabBorder: '#1E1E30', inputBg: '#10142A',
+    tabBg: '#0F0F1C', tabBorder: '#1E1E30',
     dark: true,
   } : {
     bg: '#F2F2FA', card: '#FFFFFF', cardBorder: '#E0E0EE',
     text: '#111122', textSub: '#444466', textMuted: '#888899',
     accent: '#7B4FFF', accentLight: '#5B2FFF',
-    tabBg: '#FFFFFF', tabBorder: '#E0E0EE', inputBg: '#EEEEFF',
+    tabBg: '#FFFFFF', tabBorder: '#E0E0EE',
     dark: false,
   };
 
   return (
     <AppContext.Provider value={{
       darkMode, theme,
-      soundEnabled, vibrationEnabled, notificationsEnabled,
-      toggleDarkMode, toggleSound, toggleVibration, toggleNotifications,
+      notificationsEnabled, hapticsEnabled, soundEnabled,
+      toggleDarkMode, toggleNotifications, toggleHaptics, toggleSound,
       triggerHaptic, playSound,
     }}>
       {children}
