@@ -5,34 +5,31 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#0A0A12"
     },
     "android": {
       "package": "com.ariseup.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0A0A12"
+      },
       "permissions": [
         "VIBRATE",
         "RECEIVE_BOOT_COMPLETED",
-        "SCHEDULE_EXACT_ALARM"
+        "SCHEDULE_EXACT_ALARM",
+        "ACCESS_NETWORK_STATE",
+        "INTERNET"
       ]
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.ariseup.app",
-      "infoPlist": {
-        "UIBackgroundModes": ["fetch", "remote-notification"]
-      }
+      "bundleIdentifier": "com.ariseup.app"
     },
     "plugins": [
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/notification-icon.png",
-          "color": "#7B4FFF",
-          "sounds": []
-        }
-      ]
+      "expo-notifications"
     ],
     "extra": {
       "eas": {
