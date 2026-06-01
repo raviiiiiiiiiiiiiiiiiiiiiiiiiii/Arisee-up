@@ -29,12 +29,25 @@
       "bundleIdentifier": "com.ariseup.app"
     },
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "1.6.10"
+          },
+          "ios": { "useFrameworks": "static" }
+        }
+      ]
     ],
     "extra": {
       "eas": {
         "projectId": "55c942ba-89a2-4bdf-aba0-e2385deb407c"
       }
     }
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-2414187213184434~9941896204",
+    "ios_app_id": "ca-app-pub-2414187213184434~9941896204"
   }
 }
