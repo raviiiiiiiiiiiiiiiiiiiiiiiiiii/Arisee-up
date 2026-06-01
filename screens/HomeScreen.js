@@ -8,6 +8,12 @@ import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-ico
 import { useFonts, CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative';
 import { useFocusEffect } from '@react-navigation/native';
 import { useAppContext } from '../context/AppContext';
+import {
+  BannerAd, BannerAdSize,
+  InterstitialAd, AdEventType,
+  RewardedAd, RewardedAdEventType,
+} from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../ads/AdConfig';
 
 const { width, height } = Dimensions.get('window');
 
@@ -165,7 +171,7 @@ function LevelUpModal({ visible, fromLevel, toLevel, onContinue }) {
   );
 }
 
-function AllDoneView({ quote, cinzel, cinzelBold, theme, onAddTask }) {
+function AllDoneView({ quote, cinzel, cinzelBold, theme, onAddTask, onShowRewarded, rewardedReady }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
   const t = theme;
@@ -194,6 +200,15 @@ function AllDoneView({ quote, cinzel, cinzelBold, theme, onAddTask }) {
       >
         <Ionicons name="add" size={20} color={t.text} style={{ marginRight: 8 }} />
         <Text style={[styles.newQuestText, { fontFamily: cinzel, color: t.text }]}>Add More Quests</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.newQuestBtn, { borderColor: t.accent + '88', backgroundColor: t.card, marginTop: 12, width: '100%', opacity: rewardedReady ? 1 : 0.5 }]}
+        onPress={onShowRewarded}
+      >
+        <MaterialCommunityIcons name="play-circle-outline" size={20} color={t.accent} style={{ marginRight: 8 }} />
+        <Text style={[styles.newQuestText, { fontFamily: cinzel, color: t.accentLight }]}>
+          {rewardedReady ? 'Watch Ad — Earn 25 XP' : 'Loading Reward...'}
+        </Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -235,6 +250,10 @@ function TaskCard({ task, onToggle, theme }) {
   );
 }
 
+// Ad instances created once at module level — not inside the component
+const interstitial = InterstitialAd.createForAdRequest(AD_UNITS.interstitial, { requestNonPersonalizedAdsOnly: false });
+const rewarded = RewardedAd.createForAdRequest(AD_UNITS.rewarded, { requestNonPersonalizedAdsOnly: false });
+
 export default function HomeScreen() {
   const { theme, triggerHaptic, playSound } = useAppContext();
   const t = theme;
@@ -249,10 +268,42 @@ export default function HomeScreen() {
   const [selectedIconKey, setSelectedIconKey] = useState('sword');
   const [questModal, setQuestModal] = useState({ visible: false, task: null });
   const [levelUpModal, setLevelUpModal] = useState({ visible: false, from: 1, to: 2 });
+  const [rewardedLoaded, setRewardedLoaded] = useState(false);
 
   const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
   const cinzel = fontsLoaded ? 'CinzelDecorative_400Regular' : 'System';
   const cinzelBold = fontsLoaded ? 'CinzelDecorative_700Bold' : 'System';
+
+  // Preload rewarded ad so it's ready when user taps "Earn XP"
+  useEffect(() => {
+    const unsubLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => setRewardedLoaded(true));
+    const unsubEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+      const grantBonusXP = async () => {
+        const raw = await AsyncStorage.getItem('user_data');
+        const u = raw ? JSON.parse(raw) : { level: 1, totalXP: 0 };
+        u.totalXP = (u.totalXP || 0) + 25;
+        u.level = Math.floor(u.totalXP / 500) + 1;
+        await AsyncStorage.setItem('user_data', JSON.stringify(u));
+        setUserData(u);
+        triggerHaptic('success');
+      };
+      grantBonusXP();
+    });
+    const unsubClosed = rewarded.addAdEventListener(RewardedAdEventType.CLOSED, () => {
+      setRewardedLoaded(false);
+      rewarded.load(); // preload next one immediately after close
+    });
+    rewarded.load();
+    return () => { unsubLoaded(); unsubEarned(); unsubClosed(); };
+  }, []);
+
+  const showRewardedAd = () => {
+    if (rewardedLoaded) {
+      rewarded.show();
+    } else {
+      rewarded.load(); // try loading if not ready yet
+    }
+  };
 
   useFocusEffect(useCallback(() => { loadData(); }, []));
 
@@ -349,6 +400,10 @@ export default function HomeScreen() {
       setCurrentQuote(SL_QUOTES[Math.floor(Math.random() * SL_QUOTES.length)]);
       triggerHaptic('success');
       playSound('complete');
+      // Show interstitial when all quests are done
+      interstitial.addAdEventListener(AdEventType.LOADED, () => interstitial.show());
+      interstitial.addAdEventListener(AdEventType.ERROR, () => {}); // fail silently
+      interstitial.load();
       // Only show level up modal if user actually leveled up
       if (u.level > prevLevel) {
         setTimeout(() => {
@@ -404,7 +459,9 @@ export default function HomeScreen() {
 
         {allDone ? (
           <AllDoneView quote={currentQuote} cinzel={cinzel} cinzelBold={cinzelBold} theme={t}
-            onAddTask={() => { triggerHaptic('light'); playSound('tap'); setModalVisible(true); }} />
+            onAddTask={() => { triggerHaptic('light'); playSound('tap'); setModalVisible(true); }}
+            onShowRewarded={showRewardedAd}
+            rewardedReady={rewardedLoaded} />
         ) : (
           <>
             <Text style={[styles.sectionTitle, { fontFamily: cinzelBold, color: t.text }]}>Today's Quests</Text>
@@ -422,6 +479,15 @@ export default function HomeScreen() {
         )}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Sticky banner at bottom */}
+      <View style={{ alignItems: 'center', backgroundColor: t.bg }}>
+        <BannerAd
+          unitId={AD_UNITS.banner}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          onAdFailedToLoad={() => {}}
+        />
+      </View>
 
       <QuestCompletedModal visible={questModal.visible} task={questModal.task} theme={t}
         onDone={() => { triggerHaptic('light'); setQuestModal({ visible: false, task: null }); }} />
