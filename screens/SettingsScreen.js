@@ -7,8 +7,8 @@ import { useAppContext } from '../context/AppContext';
 export default function SettingsScreen() {
   const {
     darkMode, theme,
-    notificationsEnabled, hapticsEnabled, soundEnabled,
-    toggleDarkMode, toggleNotifications, toggleHaptics, toggleSound,
+    notificationsEnabled, hapticsEnabled,
+    toggleDarkMode, toggleNotifications, toggleHaptics,
   } = useAppContext();
 
   const [fontsLoaded] = useFonts({ CinzelDecorative_400Regular, CinzelDecorative_700Bold });
@@ -31,13 +31,6 @@ export default function SettingsScreen() {
       icon: <MaterialCommunityIcons name="vibrate" size={20} color={t.accentLight} />,
       value: hapticsEnabled,
       onToggle: toggleHaptics,
-    },
-    {
-      label: 'Sound Effects',
-      sub: 'Pulse feedback on actions',
-      icon: <Ionicons name="volume-medium-outline" size={20} color={t.accentLight} />,
-      value: soundEnabled,
-      onToggle: toggleSound,
     },
     {
       label: 'Dark Mode',
