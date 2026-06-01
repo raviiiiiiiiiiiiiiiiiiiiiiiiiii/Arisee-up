@@ -89,7 +89,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingHorizontal: 20, paddingTop: 56, paddingBottom: 20 },
-  header: { alignItems: 'center', marginBottom: 32 },
+  header: { alignItems: 'center', marginBottom: 64 },
   appName: { fontSize: 14, letterSpacing: 6, marginBottom: 8 },
   pageTitle: { fontSize: 34, fontWeight: '300' },
   card: { borderRadius: 16, borderWidth: 1, marginBottom: 16, overflow: 'hidden' },
