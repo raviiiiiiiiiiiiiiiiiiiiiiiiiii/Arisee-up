@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, ScrollView, Switch } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFonts, CinzelDecorative_400Regular, CinzelDecorative_700Bold } from '@expo-google-fonts/cinzel-decorative';
 import { useAppContext } from '../context/AppContext';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { AD_UNITS } from '../ads/AdConfig';
 
 export default function SettingsScreen() {
   const {
@@ -82,6 +84,9 @@ export default function SettingsScreen() {
         </Text>
         <View style={{ height: 40 }} />
       </ScrollView>
+      <View style={{ alignItems: 'center', backgroundColor: t.bg }}>
+        <BannerAd unitId={AD_UNITS.banner} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} onAdFailedToLoad={() => {}} />
+      </View>
     </View>
   );
 }
