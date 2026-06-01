@@ -90,6 +90,7 @@ export function AppProvider({ children }) {
 
   const playSound = (type = 'tap') => {
     if (!soundRef.current) return;
+    if (!hapticsRef.current) return; // haptic toggle gates all physical feedback
     try {
       if (Platform.OS === 'android') {
         if (type === 'complete') {
