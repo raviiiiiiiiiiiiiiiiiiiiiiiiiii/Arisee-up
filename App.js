@@ -19,8 +19,12 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
-  const { theme } = useAppContext();
+  const { theme, triggerHaptic } = useAppContext();
   const t = theme;
+
+  const tabListeners = {
+    tabPress: () => triggerHaptic('light'),
+  };
 
   return (
     <Tab.Navigator
@@ -47,9 +51,9 @@ function MainTabs() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Progress" component={ProgressScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} listeners={tabListeners} />
+      <Tab.Screen name="Progress" component={ProgressScreen} listeners={tabListeners} />
+      <Tab.Screen name="Settings" component={SettingsScreen} listeners={tabListeners} />
     </Tab.Navigator>
   );
 }
