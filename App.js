@@ -64,24 +64,24 @@ function AppNavigator() {
   const [checkingNetwork, setCheckingNetwork] = useState(true);
   const { theme } = useAppContext();
 
-  const checkNetwork = useCallback(async () => {
-    setCheckingNetwork(true);
+  const checkNetwork = useCallback(async (showSpinner = false) => {
+    if (showSpinner) setCheckingNetwork(true);
     try {
       const state = await NetInfo.fetch();
       setIsOnline(state.isConnected && state.isInternetReachable !== false);
     } catch {
       setIsOnline(false);
     }
-    setCheckingNetwork(false);
+    if (showSpinner) setCheckingNetwork(false);
   }, []);
 
   useEffect(() => {
-    checkNetwork();
+    checkNetwork(true); // show spinner only on first load
     const unsubscribe = NetInfo.addEventListener(state => {
       setIsOnline(state.isConnected && state.isInternetReachable !== false);
     });
     const appStateSub = AppState.addEventListener('change', nextState => {
-      if (nextState === 'active') checkNetwork();
+      if (nextState === 'active') checkNetwork(false); // silent check on resume
     });
     return () => { unsubscribe(); appStateSub.remove(); };
   }, []);
