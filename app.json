@@ -30,11 +30,12 @@
     },
     "plugins": [
       "expo-notifications",
+      "react-native-google-mobile-ads",
       [
         "expo-build-properties",
         {
           "android": {
-            "kotlinVersion": "1.6.10"
+            "kotlinVersion": "1.9.25"
           },
           "ios": { "useFrameworks": "static" }
         }
