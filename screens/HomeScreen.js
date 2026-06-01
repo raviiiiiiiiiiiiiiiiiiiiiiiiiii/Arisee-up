@@ -291,6 +291,8 @@ export default function HomeScreen() {
 
   const toggleTask = async (task) => {
     if (task.done) return;
+    triggerHaptic('medium');
+    playSound('tap');
     const updated = tasks.map(t2 => t2.id === task.id ? { ...t2, done: true } : t2);
     await saveTasks(updated);
     setQuestModal({ visible: true, task });
@@ -345,6 +347,8 @@ export default function HomeScreen() {
       setUserData(u);
       setAllDone(true);
       setCurrentQuote(SL_QUOTES[Math.floor(Math.random() * SL_QUOTES.length)]);
+      triggerHaptic('success');
+      playSound('complete');
       // Only show level up modal if user actually leveled up
       if (u.level > prevLevel) {
         setTimeout(() => {
@@ -360,6 +364,8 @@ export default function HomeScreen() {
 
   const addTask = async () => {
     if (!newTask.trim()) return;
+    triggerHaptic('success');
+    playSound('complete');
     const task = {
       id: Date.now().toString(),
       title: newTask.trim(),
@@ -398,7 +404,7 @@ export default function HomeScreen() {
 
         {allDone ? (
           <AllDoneView quote={currentQuote} cinzel={cinzel} cinzelBold={cinzelBold} theme={t}
-            onAddTask={() => { triggerHaptic('light'); setModalVisible(true); }} />
+            onAddTask={() => { triggerHaptic('light'); playSound('tap'); setModalVisible(true); }} />
         ) : (
           <>
             <Text style={[styles.sectionTitle, { fontFamily: cinzelBold, color: t.text }]}>Today's Quests</Text>
@@ -407,7 +413,7 @@ export default function HomeScreen() {
             ))}
             <TouchableOpacity
               style={[styles.newQuestBtn, { borderColor: t.accent, backgroundColor: t.card }]}
-              onPress={() => { triggerHaptic('light'); setModalVisible(true); }}
+              onPress={() => { triggerHaptic('light'); playSound('tap'); setModalVisible(true); }}
             >
               <Ionicons name="add" size={20} color={t.text} style={{ marginRight: 8 }} />
               <Text style={[styles.newQuestText, { fontFamily: cinzel, color: t.text }]}>New Quest</Text>
@@ -418,7 +424,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       <QuestCompletedModal visible={questModal.visible} task={questModal.task} theme={t}
-        onDone={() => setQuestModal({ visible: false, task: null })} />
+        onDone={() => { triggerHaptic('light'); setQuestModal({ visible: false, task: null }); }} />
 
       <LevelUpModal visible={levelUpModal.visible} fromLevel={levelUpModal.from} toLevel={levelUpModal.to}
         onContinue={() => setLevelUpModal({ visible: false, from: 1, to: 2 })} />
