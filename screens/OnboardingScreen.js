@@ -74,7 +74,7 @@ export default function OnboardingScreen({ navigation }) {
 
   const finishOnboarding = async () => {
     await AsyncStorage.setItem('onboarding_done', 'true');
-    navigation.replace('Auth');
+    navigation.replace('Main');
   };
 
   const slide = SLIDES[current];
