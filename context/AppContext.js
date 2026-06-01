@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import MobileAds from 'react-native-google-mobile-ads';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
@@ -36,6 +37,7 @@ export function AppProvider({ children }) {
   const soundRef = useRef(true);
 
   useEffect(() => {
+    MobileAds().initialize();
     loadSettings();
     initUserData();
     requestAndSetupNotifications();
