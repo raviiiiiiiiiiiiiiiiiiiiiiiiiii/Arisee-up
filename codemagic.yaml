@@ -9,14 +9,26 @@ workflows:
     scripts:
       - name: Install dependencies
         script: npm install
+
       - name: Run Expo prebuild
         script: npx expo prebuild --platform android --clean --no-install
+
+      - name: Inject AdMob App ID into AndroidManifest
+        script: |
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          # Insert AdMob meta-data before the closing </application> tag
+          sed -i 's|</application>|    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-2414187213184434~9941896204"/>\n        </application>|' $MANIFEST
+          echo "AdMob App ID injected:"
+          grep -A1 "APPLICATION_ID" $MANIFEST
+
       - name: Build APK
         script: |
           cd android
           ./gradlew assembleRelease
+
     artifacts:
       - android/app/build/outputs/apk/release/*.apk
+
     publishing:
       email:
         recipients:
