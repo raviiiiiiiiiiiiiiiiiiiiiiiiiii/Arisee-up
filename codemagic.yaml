@@ -15,11 +15,17 @@ workflows:
 
       - name: Inject AdMob App ID into AndroidManifest
         script: |
-          MANIFEST=android/app/src/main/AndroidManifest.xml
-          # Insert AdMob meta-data before the closing </application> tag
-          sed -i 's|</application>|    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-2414187213184434~9941896204"/>\n        </application>|' $MANIFEST
-          echo "AdMob App ID injected:"
-          grep -A1 "APPLICATION_ID" $MANIFEST
+          MANIFEST="android/app/src/main/AndroidManifest.xml"
+          echo "--- Manifest before injection ---"
+          cat $MANIFEST
+          # Remove any existing APPLICATION_ID meta-data to avoid duplicates
+          sed -i '/com.google.android.gms.ads.APPLICATION_ID/d' $MANIFEST
+          # Inject before </application>
+          sed -i 's|</application>|<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-2414187213184434~9941896204"/></application>|' $MANIFEST
+          echo "--- Manifest after injection ---"
+          cat $MANIFEST
+          echo "--- Verifying injection ---"
+          grep "APPLICATION_ID" $MANIFEST && echo "SUCCESS: AdMob ID injected" || echo "FAILED: AdMob ID not found"
 
       - name: Build APK
         script: |
