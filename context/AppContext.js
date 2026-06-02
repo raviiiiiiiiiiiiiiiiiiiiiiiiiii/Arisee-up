@@ -119,15 +119,11 @@ export function AppProvider({ children }) {
         finalStatus = status;
       }
       if (finalStatus !== 'granted') return;
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "SYSTEM",
-          body: "Arise Up notifications are active. The shadow army is watching.",
-          sound: true,
-        },
-        trigger: { seconds: 3 },
-      });
-      await scheduleEvery2Hours();
+      // Only schedule if not already set up — prevents re-scheduling on every launch
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      if (scheduled.length === 0) {
+        await scheduleEvery2Hours();
+      }
     } catch {}
   };
 
@@ -159,7 +155,7 @@ export function AppProvider({ children }) {
     setNotificationsEnabled(val);
     await saveSettings('notifications', val);
     triggerHaptic('light');
-    if (val) await requestAndSetupNotifications();
+    if (val) await scheduleEvery2Hours(); // force reschedule on manual enable
     else await cancelNotifications();
   };
 
